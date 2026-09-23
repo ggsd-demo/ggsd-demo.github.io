@@ -239,7 +239,8 @@ export const FRANKA = {
   puckIdleSpeedThreshold: 0.01,
   // Training cfg (FrankaArmSoccerHierarchicalEnvCfg) vs the *-Play cfg the clips use.
   rulesTrain: { maxEpisodeSteps: 720, puckIdleInsideS: 3.0, puckIdleOutsideS: 0.5, puckIdleEndsMatch: true },
-  rulesPlay: { maxEpisodeSteps: 900, puckIdleInsideS: 1.0, puckIdleOutsideS: 10.0, puckIdleEndsMatch: false },
+  // (Isaac's PlayCfg idles were 1.0 / 10.0 s; 3.0 / 1.0 since 2026-09-23 at the user's request.)
+  rulesPlay: { maxEpisodeSteps: 900, puckIdleInsideS: 3.0, puckIdleOutsideS: 1.0, puckIdleEndsMatch: false },
   puckResetXRange: [-0.55, 0.55], puckResetYRange: [-0.2, 0.2], puckSpawnZ: 0.75 + 0.015,
   resetEeXRange: [-0.75, -0.6], resetEeYRange: [-0.3, 0.3], resetEeZRange: [0.78, 0.80], resetIkIters: 3,
   puckLinearDamping: 0.25, puckAngularDamping: 2.0,
