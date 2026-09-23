@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Game Guided Skill Discovery</title>
+  <link rel="stylesheet" href="./style.css" />
+  <!-- three.js via CDN import map (no build step) -->
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/"
+    }
+  }
+  </script>
+</head>
+<body data-mode="play">
+  <!-- One canvas per mode (each keeps its own three.js renderer); body[data-mode] shows one. -->
+  <canvas id="canvasPlay" class="view"></canvas>
+  <canvas id="canvasGame" class="view"></canvas>
+
+  <div id="panel">
+    <h1>Game Guided Skill Discovery</h1>
+    <p id="status">Booting…</p>
+
+    <label class="row">
+      <span>Robot</span>
+      <select id="robotSelect"></select>
+    </label>
+    <label class="row" id="runRow">
+      <span>Run</span>
+      <select id="runSelect" title="Trained run and checkpoint iteration the policy was exported from"></select>
+    </label>
+
+    <label class="row">
+      <span>Task</span>
+      <select id="sceneSelect"></select>
+    </label>
+
+    <!-- Hover card with the selected task's tips (main.js renderTips / placeTips). -->
+    <div class="row tips" id="tipsRow" tabindex="0" role="button" aria-expanded="false" aria-controls="tipsBox">
+      <span>Tips</span>
+      <span class="tipsmark">hover to read</span>
+    </div>
+
+    <div class="row buttons">
+      <button id="play">Play</button>
+      <button id="reset">Reset (R)</button>
+    </div>
+
+    <!-- Playground rows -->
+    <label class="row check only-play" id="followRow"><input type="checkbox" id="followCam" /> <span>Follow camera</span></label>
+    <label class="row check only-play" id="fallRow"><input type="checkbox" id="resetOnFall" checked /> <span>Reset when the robot falls</span></label>
+    <label class="row check only-play" id="trailRow" style="display:none"><input type="checkbox" id="trail" checked /> <span>Trail: a marker every 0.5 s of sim time</span></label>
+
+    <!-- Game Play rows -->
+    <div class="only-game">
+      <p class="hint" id="envHint">Defaults match the training env.</p>
+
+      <label class="row check"><input type="radio" name="mode" id="modeAuto" checked /> <span>Auto — the policy picks “me”’s skill</span></label>
+      <label class="row check"><input type="radio" name="mode" id="modePlayable" /> <span>Playable — I choose “me”’s skill</span></label>
+    </div>
+
+    <div class="row"><span id="skillLabel">Skill</span></div>
+    <div id="skillBtns" class="skillbtns"></div>
+
+    <div class="legend only-game">
+      <span class="dot" style="background:#3a6cff"></span> You (me)
+      <span class="dot" style="background:#ff4444"></span> Opponent
+    </div>
+  </div>
+
+  <!-- Outside #panel: that box scrolls and would clip the card (it is placed by JS). -->
+  <div id="tipsBox" class="tipsbox" hidden></div>
+
+  <div id="flash" class="flash"><span id="flashText">FELL</span></div>
+
+  <div id="hud">
+    <div class="hudline only-play"><span id="hudScene" class="scene">Practice</span></div>
+    <div class="hudline only-play"><span class="k">Skill</span> <span id="hudSkill">1</span>
+      <span class="k">· hold</span> <span id="hudCtr">0</span></div>
+    <div class="hudline only-play"><span class="k">Time</span> <span id="hudTime">0.0s</span></div>
+    <!-- Game Play: the match clock, counting the seconds left of the fixed 30 s. -->
+    <div class="hudline big only-game"><span id="hudLeft">30</span><span class="k"> / </span><span id="hudMax">30</span><span class="k"> (s)</span></div>
+    <div class="hudline only-play" id="hudGoalLine"><span class="k">Goal distance</span> <span id="hudGoal">–</span><span class="k"> m</span></div>
+    <div class="hudline big only-game" id="hudHpLine"><span class="k">HP me / foe</span> <span id="hudHp">–</span></div>
+    <div class="hudline big only-game" id="hudScoreLine" style="display:none"><span class="k">Score me / foe</span> <span id="hudScore">0 – 0</span></div>
+    <div id="hudResult" class="result"></div>
+    <div id="hudStats" class="stats"></div>
+  </div>
+
+  <script type="module" src="./js/main.js"></script>
+</body>
+</html>

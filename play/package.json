@@ -1,0 +1,10 @@
+{
+  "name": "playground-web",
+  "version": "0.2.0",
+  "private": true,
+  "type": "module",
+  "description": "Static, no-build web player for trained agents (MuJoCo WASM + hand-written JS policy): the Playground (one robot, low-level policy, the downstream scenes) and Game Play (the two-player games) on one page. Serve this folder directly (GitHub Pages or `python -m http.server`).",
+  "scripts": {
+    "serve": "python3 -m http.server 8000"
+  }
+}

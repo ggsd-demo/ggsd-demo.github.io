@@ -1,0 +1,126 @@
+{
+  "game": "g1",
+  "activation": "elu",
+  "obs_dim": 88,
+  "num_skills": 6,
+  "num_actions": 23,
+  "proprio_start": 2,
+  "proprio_dim": 86,
+  "low_level_input_dim": 92,
+  "skill_duration": 10,
+  "high_level_hidden_dims": [
+    512,
+    512,
+    256
+  ],
+  "low_level_hidden_dims": [
+    512,
+    512,
+    256,
+    128
+  ],
+  "low_level_condition_on_me_proprioceptive_only": true,
+  "low_level_tanh_mean": true,
+  "low_level_obs_indices": null,
+  "env_action_scale": null,
+  "iter": 60000,
+  "num_high_level_layers": 0,
+  "num_low_level_layers": 5,
+  "tensors": [
+    {
+      "name": "ll_w0",
+      "shape": [
+        512,
+        92
+      ],
+      "offset": 0,
+      "count": 47104
+    },
+    {
+      "name": "ll_b0",
+      "shape": [
+        512
+      ],
+      "offset": 188416,
+      "count": 512
+    },
+    {
+      "name": "ll_w1",
+      "shape": [
+        512,
+        512
+      ],
+      "offset": 190464,
+      "count": 262144
+    },
+    {
+      "name": "ll_b1",
+      "shape": [
+        512
+      ],
+      "offset": 1239040,
+      "count": 512
+    },
+    {
+      "name": "ll_w2",
+      "shape": [
+        256,
+        512
+      ],
+      "offset": 1241088,
+      "count": 131072
+    },
+    {
+      "name": "ll_b2",
+      "shape": [
+        256
+      ],
+      "offset": 1765376,
+      "count": 256
+    },
+    {
+      "name": "ll_w3",
+      "shape": [
+        128,
+        256
+      ],
+      "offset": 1766400,
+      "count": 32768
+    },
+    {
+      "name": "ll_b3",
+      "shape": [
+        128
+      ],
+      "offset": 1897472,
+      "count": 128
+    },
+    {
+      "name": "ll_w4",
+      "shape": [
+        23,
+        128
+      ],
+      "offset": 1897984,
+      "count": 2944
+    },
+    {
+      "name": "ll_b4",
+      "shape": [
+        23
+      ],
+      "offset": 1909760,
+      "count": 23
+    },
+    {
+      "name": "low_level_log_std",
+      "shape": [
+        23
+      ],
+      "offset": 1909852,
+      "count": 23
+    }
+  ],
+  "weights_file": "weights.bin",
+  "dtype": "float32"
+}

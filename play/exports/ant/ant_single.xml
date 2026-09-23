@@ -1,0 +1,124 @@
+<!--
+  Single-ant model for the downstream play tasks (arena / corridor / cube push).
+  Painted like Isaac's SingleAnt-Play / dual-Ant "me" agent: blue body, deep navy front
+  feet (DualAntEnvCfg.me_front_leg_color), and the eyes the play scripts attach
+  (render-only geoms: zero mass, no collision, so the dynamics are unchanged).
+  Same canonical Gym ant geometry and calibration knobs as ant.xml (dual sumo),
+  but one robot, no me_/foe_ prefixes: root joint "root", root body "torso",
+  joint names = Isaac names. The scene (walls, goal, cube) is injected by the
+  player in place of the SCENE marker below.
+
+  Friction: Isaac's SingleAnt-Play uses static=dynamic=1.0 on the terrain and the scene
+  default material (1.0) on the ant, cube and walls, so every contact is 1.0 (condim=3:
+  only sliding friction is used).
+
+  Collision bits: robot contype=1 conaffinity=2 (no self-collision, like Isaac),
+  scene objects contype=2 conaffinity=1 (collide with the robot), floor/walls 3/3.
+-->
+<mujoco model="single_ant">
+  <compiler angle="degree" coordinate="local" inertiafromgeom="true"/>
+  <option timestep="0.00833333" integrator="RK4">
+    <flag eulerdamp="disable"/>
+  </option>
+
+  <default>
+    <default class="ant">
+      <joint armature="0.01" damping="0" limited="true" type="hinge"/>
+      <geom condim="3" density="5.0" friction="1 0.5 0.5" margin="0.01"
+            size="0.08" type="capsule" contype="1" conaffinity="2" rgba="0.2 0.4 1.0 1"/>
+      <default class="front">
+        <geom rgba="0.02 0.05 0.35 1"/>
+      </default>
+      <!-- Eyes: render-only, like the Isaac play scripts' decorate_ants(). No collision bits
+           and zero mass, so the dynamics are exactly those of the eyeless model. -->
+      <default class="eye">
+        <geom type="ellipsoid" contype="0" conaffinity="0" mass="0" rgba="0.95 0.95 0.95 1"/>
+      </default>
+      <default class="pupil">
+        <geom type="ellipsoid" contype="0" conaffinity="0" mass="0" rgba="0.02 0.02 0.02 1"/>
+      </default>
+    </default>
+  </default>
+
+  <asset>
+    <texture type="skybox" builtin="gradient" rgb1="0.5 0.7 0.9" rgb2="0.1 0.15 0.25"
+             width="256" height="256"/>
+    <texture name="grid" type="2d" builtin="checker" rgb1="0.25 0.27 0.30"
+             rgb2="0.32 0.34 0.38" width="300" height="300" mark="edge" markrgb="0.5 0.5 0.5"/>
+    <material name="grid" texture="grid" texrepeat="12 12" texuniform="true" reflectance="0.1"/>
+  </asset>
+
+  <worldbody>
+    <light name="light" pos="0 0 12" dir="0 0 -1" diffuse="0.8 0.8 0.8" castshadow="false"/>
+    <geom name="floor" type="plane" pos="0 0 0" size="40 40 0.1" material="grid"
+          contype="3" conaffinity="3" condim="3" friction="1 0.5 0.5"/>
+
+    <body name="torso" pos="0 0 0.5" childclass="ant">
+      <freejoint name="root"/>
+      <geom name="torso_geom" type="sphere" size="0.25"/>
+      <!-- Eyes on the upper front (+y) of the torso: flattened white domes with black pupils,
+           at ant_visuals.py's EYE_OFFSETS / EYE_RADIUS / EYE_DEPTH_SCALE. -->
+      <geom name="eye_l" class="eye" pos="-0.105 0.228 0.13" size="0.085 0.03825 0.085"/>
+      <geom name="eye_r" class="eye" pos="0.105 0.228 0.13" size="0.085 0.03825 0.085"/>
+      <geom name="pupil_l" class="pupil" pos="-0.105 0.256688 0.13" size="0.045 0.02025 0.045"/>
+      <geom name="pupil_r" class="pupil" pos="0.105 0.256688 0.13" size="0.045 0.02025 0.045"/>
+      <body name="fl_leg">
+        <geom fromto="0 0 0 0.2 0.2 0"/>
+        <body name="fl_aux" pos="0.2 0.2 0">
+          <joint name="front_left_leg" axis="0 0 1" range="-40 40"/>
+          <geom fromto="0 0 0 0.2 0.2 0"/>
+          <body name="front_left_foot_body" pos="0.2 0.2 0">
+            <joint name="front_left_foot" axis="-1 1 0" range="30 100"/>
+            <geom class="front" fromto="0 0 0 0.4 0.4 0"/>
+          </body>
+        </body>
+      </body>
+      <body name="fr_leg">
+        <geom fromto="0 0 0 -0.2 0.2 0"/>
+        <body name="fr_aux" pos="-0.2 0.2 0">
+          <joint name="front_right_leg" axis="0 0 1" range="-40 40"/>
+          <geom fromto="0 0 0 -0.2 0.2 0"/>
+          <body name="front_right_foot_body" pos="-0.2 0.2 0">
+            <joint name="front_right_foot" axis="1 1 0" range="-100 -30"/>
+            <geom class="front" fromto="0 0 0 -0.4 0.4 0"/>
+          </body>
+        </body>
+      </body>
+      <body name="lb_leg">
+        <geom fromto="0 0 0 -0.2 -0.2 0"/>
+        <body name="lb_aux" pos="-0.2 -0.2 0">
+          <joint name="left_back_leg" axis="0 0 1" range="-40 40"/>
+          <geom fromto="0 0 0 -0.2 -0.2 0"/>
+          <body name="left_back_foot_body" pos="-0.2 -0.2 0">
+            <joint name="left_back_foot" axis="-1 1 0" range="-100 -30"/>
+            <geom fromto="0 0 0 -0.4 -0.4 0"/>
+          </body>
+        </body>
+      </body>
+      <body name="rb_leg">
+        <geom fromto="0 0 0 0.2 -0.2 0"/>
+        <body name="rb_aux" pos="0.2 -0.2 0">
+          <joint name="right_back_leg" axis="0 0 1" range="-40 40"/>
+          <geom fromto="0 0 0 0.2 -0.2 0"/>
+          <body name="right_back_foot_body" pos="0.2 -0.2 0">
+            <joint name="right_back_foot" axis="1 1 0" range="30 100"/>
+            <geom fromto="0 0 0 0.4 -0.4 0"/>
+          </body>
+        </body>
+      </body>
+    </body>
+    <!-- SCENE -->
+  </worldbody>
+  <!-- CONTACT -->
+
+  <actuator>
+    <motor name="front_left_leg"   joint="front_left_leg"   gear="1" ctrllimited="false"/>
+    <motor name="front_right_leg"  joint="front_right_leg"  gear="1" ctrllimited="false"/>
+    <motor name="left_back_leg"    joint="left_back_leg"    gear="1" ctrllimited="false"/>
+    <motor name="right_back_leg"   joint="right_back_leg"   gear="1" ctrllimited="false"/>
+    <motor name="front_left_foot"  joint="front_left_foot"  gear="1" ctrllimited="false"/>
+    <motor name="front_right_foot" joint="front_right_foot" gear="1" ctrllimited="false"/>
+    <motor name="left_back_foot"   joint="left_back_foot"   gear="1" ctrllimited="false"/>
+    <motor name="right_back_foot"  joint="right_back_foot"  gear="1" ctrllimited="false"/>
+  </actuator>
+</mujoco>

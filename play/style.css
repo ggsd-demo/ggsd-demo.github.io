@@ -1,0 +1,129 @@
+:root {
+  --bg: #0e1626; --panel: rgba(16, 24, 41, 0.86); --line: #2a3a5c;
+  --fg: #e6ecf7; --muted: #93a3c4; --accent: #5b8cff; --win: #46d39a; --lose: #ff6b6b;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; overflow: hidden; background: var(--bg);
+  color: var(--fg); font-family: "Inter", system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
+canvas.view { position: fixed; inset: 0; width: 100vw; height: 100vh; display: block; }
+
+/* One page, two modes (see js/main.js): body[data-mode] shows the active mode's canvas and
+   its panel / HUD rows. The modes still toggle their own rows with inline display:none. */
+body[data-mode="play"] #canvasGame, body[data-mode="play"] .only-game,
+body[data-mode="game"] #canvasPlay, body[data-mode="game"] .only-play { display: none; }
+
+#panel {
+  position: fixed; top: 16px; left: 16px; width: 300px; padding: 16px 18px;
+  background: var(--panel); border: 1px solid var(--line); border-radius: 14px;
+  backdrop-filter: blur(8px); box-shadow: 0 8px 30px rgba(0,0,0,0.35); z-index: 10;
+  max-height: calc(100vh - 32px); overflow-y: auto;
+}
+#panel h1 { font-size: 17px; margin: 0 0 2px; font-weight: 700; letter-spacing: 0.2px; }
+#status { font-size: 12px; color: var(--muted); margin: 0 0 14px; min-height: 16px; }
+#panel a { color: var(--accent); text-decoration: none; }
+#panel a:hover { text-decoration: underline; }
+
+.row { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 10px 0; font-size: 13px; }
+.row > span { color: var(--muted); }
+.row.check { justify-content: flex-start; gap: 8px; cursor: pointer; }
+.row.check span { color: var(--fg); }
+select, button {
+  font: inherit; font-size: 13px; color: var(--fg); background: #16223c;
+  border: 1px solid var(--line); border-radius: 9px; padding: 7px 11px; cursor: pointer;
+}
+select { flex: 1; }
+input[type=number] {
+  font: inherit; font-size: 13px; color: var(--fg); background: #16223c;
+  border: 1px solid var(--line); border-radius: 9px; padding: 7px 11px; width: 90px;
+  text-align: right; font-variant-numeric: tabular-nums;
+}
+input[type=number]:focus { outline: none; border-color: var(--accent); }
+input[type=checkbox]:disabled + span, input[type=radio]:disabled + span { opacity: 0.55; }
+.buttons { gap: 8px; }
+.buttons button { flex: 1; }
+button:hover { border-color: var(--accent); }
+button:active { transform: translateY(1px); }
+input[type=checkbox], input[type=radio] { width: 16px; height: 16px; accent-color: var(--accent); }
+
+/* Skills: one row per skill -- a number badge (the 1-N key) plus the description
+   from `skillNames`. Solid accent = the skill you picked; a tinted outline = the
+   skill the policy is running by itself (Game Play's Auto mode). */
+.skillbtns { display: flex; flex-direction: column; gap: 6px; margin-top: 4px; }
+.skillbtn {
+  display: flex; align-items: center; gap: 10px; width: 100%;
+  padding: 7px 10px; font-weight: 400; text-align: left; border-radius: 10px;
+}
+.skillbtn .n {
+  flex: none; display: flex; align-items: center; justify-content: center;
+  width: 20px; height: 20px; border-radius: 6px;
+  font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums;
+  background: #16223c; border: 1px solid var(--line); color: var(--fg);
+}
+.skillbtn .d { font-size: 12px; color: var(--muted); line-height: 1.35; overflow-wrap: anywhere; }
+.skillbtn.active { background: var(--accent); border-color: var(--accent); }
+.skillbtn.active .n { background: #06122e; border-color: #06122e; color: var(--accent); }
+.skillbtn.active .d { color: #06122e; font-weight: 600; }
+.skillbtn.auto { border-color: var(--accent); }
+.skillbtn.auto .n { border-color: var(--accent); color: var(--accent); }
+.skillbtn.auto .d { color: var(--fg); }
+/* Tips: the row in the panel, and the card main.js places next to it on hover. */
+.row.tips { cursor: help; }
+.row.tips .tipsmark { color: var(--muted); font-size: 11px; }
+.row.tips:hover > span, .row.tips:focus > span, .row.tips.open > span { color: var(--accent); }
+.row.tips:focus { outline: none; }
+.tipsbox {
+  position: fixed; z-index: 30; width: 320px; max-width: calc(100vw - 32px);
+  padding: 12px 14px; font-size: 12px; line-height: 1.5; color: var(--fg);
+  background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+  backdrop-filter: blur(8px); box-shadow: 0 8px 30px rgba(0,0,0,0.45);
+}
+.tipsbox[hidden] { display: none; }
+.tipsbox h3 { margin: 0 0 8px; font-size: 12px; font-weight: 700; color: var(--accent); }
+.tipsbox ul { margin: 0; padding-left: 16px; }
+.tipsbox li { margin: 5px 0; }
+.tipsbox li::marker { color: var(--muted); }
+
+.hint { font-size: 11px; color: var(--muted); margin: 8px 0 0; line-height: 1.4; overflow-wrap: anywhere; }
+
+.legend { display: flex; align-items: center; gap: 6px; margin-top: 12px;
+  font-size: 12px; color: var(--muted); }
+.legend .dot { display: inline-block; width: 12px; height: 12px; border-radius: 50%;
+  margin-left: 10px; box-shadow: 0 0 0 1px rgba(255,255,255,0.15); }
+.legend .dot:first-of-type { margin-left: 0; }
+
+#hud {
+  position: fixed; top: 16px; right: 16px; min-width: 230px; padding: 14px 16px;
+  background: var(--panel); border: 1px solid var(--line); border-radius: 14px;
+  backdrop-filter: blur(8px); z-index: 10; text-align: right;
+}
+.hudline { font-size: 13px; color: var(--muted); }
+.hudline .scene { color: var(--fg); font-weight: 700; font-size: 14px; }
+.hudline .k { color: var(--muted); }
+.hudline #hudSkill, .hudline #hudCtr, .hudline #hudTime, .hudline #hudGoal,
+.hudline #hudMax, .hudline #hudScore, .hudline #hudLeft, .hudline #hudHp {
+  color: var(--fg); font-weight: 700; font-variant-numeric: tabular-nums; }
+/* Game Play reads from across the room: its clock, HP and score are the panel title's
+   size, with the labels left small so the numbers carry the line. */
+.hudline.big { font-size: 17px; line-height: 1.5; }
+.hudline.big .k { font-size: 12px; }
+.result { font-size: 20px; font-weight: 800; margin: 6px 0; min-height: 24px; }
+.result.win { color: var(--win); } .result.lose { color: var(--lose); } .result.draw { color: var(--muted); }
+.stats { font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; }
+body[data-mode="game"] .stats { font-size: 14px; }
+
+/* Episode end (Playground): a coloured vignette plus a large banner, red for a fall and
+   green for a goal, played once per event (see js/play/mode.js). */
+.flash { position: fixed; inset: 0; z-index: 9; pointer-events: none; opacity: 0;
+  display: flex; align-items: center; justify-content: center;
+  --flash-rgb: 255, 60, 60;
+  background: radial-gradient(ellipse at center, rgba(var(--flash-rgb), 0.15) 0%, rgba(var(--flash-rgb), 0.55) 100%); }
+.flash.goal { --flash-rgb: 50, 220, 130; }
+.flash span { font-size: clamp(48px, 12vw, 140px); font-weight: 900; letter-spacing: 6px; color: #fff;
+  text-shadow: 0 0 24px rgba(var(--flash-rgb), 0.9), 0 4px 18px rgba(0, 0, 0, 0.6); }
+.flash.on { animation: fallflash 1.5s ease-out forwards; }
+@keyframes fallflash { 0% { opacity: 0; } 8% { opacity: 1; } 60% { opacity: 1; } 100% { opacity: 0; } }
+
+@media (max-width: 640px) {
+  #panel { width: calc(100vw - 32px); }
+  #hud { display: none; }
+}

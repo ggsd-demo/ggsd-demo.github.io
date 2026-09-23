@@ -1,0 +1,212 @@
+{
+  "game": "franka_hockey",
+  "activation": "elu",
+  "obs_dim": 61,
+  "num_skills": 5,
+  "num_actions": 4,
+  "proprio_start": 0,
+  "proprio_dim": 23,
+  "low_level_input_dim": 28,
+  "skill_duration": 10,
+  "high_level_hidden_dims": [
+    512,
+    512,
+    512,
+    256
+  ],
+  "low_level_hidden_dims": [
+    512,
+    512,
+    512,
+    256
+  ],
+  "low_level_condition_on_me_proprioceptive_only": true,
+  "low_level_tanh_mean": false,
+  "low_level_obs_indices": null,
+  "env_action_scale": null,
+  "iter": 70000,
+  "num_high_level_layers": 5,
+  "num_low_level_layers": 5,
+  "tensors": [
+    {
+      "name": "hl_w0",
+      "shape": [
+        512,
+        61
+      ],
+      "offset": 0,
+      "count": 31232
+    },
+    {
+      "name": "hl_b0",
+      "shape": [
+        512
+      ],
+      "offset": 124928,
+      "count": 512
+    },
+    {
+      "name": "hl_w1",
+      "shape": [
+        512,
+        512
+      ],
+      "offset": 126976,
+      "count": 262144
+    },
+    {
+      "name": "hl_b1",
+      "shape": [
+        512
+      ],
+      "offset": 1175552,
+      "count": 512
+    },
+    {
+      "name": "hl_w2",
+      "shape": [
+        512,
+        512
+      ],
+      "offset": 1177600,
+      "count": 262144
+    },
+    {
+      "name": "hl_b2",
+      "shape": [
+        512
+      ],
+      "offset": 2226176,
+      "count": 512
+    },
+    {
+      "name": "hl_w3",
+      "shape": [
+        256,
+        512
+      ],
+      "offset": 2228224,
+      "count": 131072
+    },
+    {
+      "name": "hl_b3",
+      "shape": [
+        256
+      ],
+      "offset": 2752512,
+      "count": 256
+    },
+    {
+      "name": "hl_w4",
+      "shape": [
+        5,
+        256
+      ],
+      "offset": 2753536,
+      "count": 1280
+    },
+    {
+      "name": "hl_b4",
+      "shape": [
+        5
+      ],
+      "offset": 2758656,
+      "count": 5
+    },
+    {
+      "name": "ll_w0",
+      "shape": [
+        512,
+        28
+      ],
+      "offset": 2758676,
+      "count": 14336
+    },
+    {
+      "name": "ll_b0",
+      "shape": [
+        512
+      ],
+      "offset": 2816020,
+      "count": 512
+    },
+    {
+      "name": "ll_w1",
+      "shape": [
+        512,
+        512
+      ],
+      "offset": 2818068,
+      "count": 262144
+    },
+    {
+      "name": "ll_b1",
+      "shape": [
+        512
+      ],
+      "offset": 3866644,
+      "count": 512
+    },
+    {
+      "name": "ll_w2",
+      "shape": [
+        512,
+        512
+      ],
+      "offset": 3868692,
+      "count": 262144
+    },
+    {
+      "name": "ll_b2",
+      "shape": [
+        512
+      ],
+      "offset": 4917268,
+      "count": 512
+    },
+    {
+      "name": "ll_w3",
+      "shape": [
+        256,
+        512
+      ],
+      "offset": 4919316,
+      "count": 131072
+    },
+    {
+      "name": "ll_b3",
+      "shape": [
+        256
+      ],
+      "offset": 5443604,
+      "count": 256
+    },
+    {
+      "name": "ll_w4",
+      "shape": [
+        4,
+        256
+      ],
+      "offset": 5444628,
+      "count": 1024
+    },
+    {
+      "name": "ll_b4",
+      "shape": [
+        4
+      ],
+      "offset": 5448724,
+      "count": 4
+    },
+    {
+      "name": "low_level_log_std",
+      "shape": [
+        4
+      ],
+      "offset": 5448740,
+      "count": 4
+    }
+  ],
+  "weights_file": "weights.bin",
+  "dtype": "float32"
+}

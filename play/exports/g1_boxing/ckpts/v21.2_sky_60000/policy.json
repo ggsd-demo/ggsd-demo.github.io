@@ -1,0 +1,194 @@
+{
+  "game": "g1_boxing",
+  "activation": "elu",
+  "obs_dim": 194,
+  "num_skills": 6,
+  "num_actions": 23,
+  "proprio_start": 2,
+  "proprio_dim": 86,
+  "low_level_input_dim": 92,
+  "skill_duration": 10,
+  "high_level_hidden_dims": [
+    512,
+    512,
+    256
+  ],
+  "low_level_hidden_dims": [
+    512,
+    512,
+    256,
+    128
+  ],
+  "low_level_condition_on_me_proprioceptive_only": true,
+  "low_level_tanh_mean": true,
+  "low_level_obs_indices": null,
+  "env_action_scale": null,
+  "iter": 60000,
+  "num_high_level_layers": 4,
+  "num_low_level_layers": 5,
+  "tensors": [
+    {
+      "name": "hl_w0",
+      "shape": [
+        512,
+        194
+      ],
+      "offset": 0,
+      "count": 99328
+    },
+    {
+      "name": "hl_b0",
+      "shape": [
+        512
+      ],
+      "offset": 397312,
+      "count": 512
+    },
+    {
+      "name": "hl_w1",
+      "shape": [
+        512,
+        512
+      ],
+      "offset": 399360,
+      "count": 262144
+    },
+    {
+      "name": "hl_b1",
+      "shape": [
+        512
+      ],
+      "offset": 1447936,
+      "count": 512
+    },
+    {
+      "name": "hl_w2",
+      "shape": [
+        256,
+        512
+      ],
+      "offset": 1449984,
+      "count": 131072
+    },
+    {
+      "name": "hl_b2",
+      "shape": [
+        256
+      ],
+      "offset": 1974272,
+      "count": 256
+    },
+    {
+      "name": "hl_w3",
+      "shape": [
+        6,
+        256
+      ],
+      "offset": 1975296,
+      "count": 1536
+    },
+    {
+      "name": "hl_b3",
+      "shape": [
+        6
+      ],
+      "offset": 1981440,
+      "count": 6
+    },
+    {
+      "name": "ll_w0",
+      "shape": [
+        512,
+        92
+      ],
+      "offset": 1981464,
+      "count": 47104
+    },
+    {
+      "name": "ll_b0",
+      "shape": [
+        512
+      ],
+      "offset": 2169880,
+      "count": 512
+    },
+    {
+      "name": "ll_w1",
+      "shape": [
+        512,
+        512
+      ],
+      "offset": 2171928,
+      "count": 262144
+    },
+    {
+      "name": "ll_b1",
+      "shape": [
+        512
+      ],
+      "offset": 3220504,
+      "count": 512
+    },
+    {
+      "name": "ll_w2",
+      "shape": [
+        256,
+        512
+      ],
+      "offset": 3222552,
+      "count": 131072
+    },
+    {
+      "name": "ll_b2",
+      "shape": [
+        256
+      ],
+      "offset": 3746840,
+      "count": 256
+    },
+    {
+      "name": "ll_w3",
+      "shape": [
+        128,
+        256
+      ],
+      "offset": 3747864,
+      "count": 32768
+    },
+    {
+      "name": "ll_b3",
+      "shape": [
+        128
+      ],
+      "offset": 3878936,
+      "count": 128
+    },
+    {
+      "name": "ll_w4",
+      "shape": [
+        23,
+        128
+      ],
+      "offset": 3879448,
+      "count": 2944
+    },
+    {
+      "name": "ll_b4",
+      "shape": [
+        23
+      ],
+      "offset": 3891224,
+      "count": 23
+    },
+    {
+      "name": "low_level_log_std",
+      "shape": [
+        23
+      ],
+      "offset": 3891316,
+      "count": 23
+    }
+  ],
+  "weights_file": "weights.bin",
+  "dtype": "float32"
+}

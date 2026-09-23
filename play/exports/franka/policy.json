@@ -1,0 +1,127 @@
+{
+  "game": "franka",
+  "activation": "elu",
+  "obs_dim": 37,
+  "num_skills": 5,
+  "num_actions": 4,
+  "proprio_start": 0,
+  "proprio_dim": 23,
+  "low_level_input_dim": 28,
+  "skill_duration": 10,
+  "high_level_hidden_dims": [
+    512,
+    512,
+    512,
+    256
+  ],
+  "low_level_hidden_dims": [
+    512,
+    512,
+    512,
+    256
+  ],
+  "low_level_condition_on_me_proprioceptive_only": true,
+  "low_level_tanh_mean": false,
+  "low_level_obs_indices": null,
+  "env_action_scale": null,
+  "iter": 70000,
+  "num_high_level_layers": 0,
+  "num_low_level_layers": 5,
+  "tensors": [
+    {
+      "name": "ll_w0",
+      "shape": [
+        512,
+        28
+      ],
+      "offset": 0,
+      "count": 14336
+    },
+    {
+      "name": "ll_b0",
+      "shape": [
+        512
+      ],
+      "offset": 57344,
+      "count": 512
+    },
+    {
+      "name": "ll_w1",
+      "shape": [
+        512,
+        512
+      ],
+      "offset": 59392,
+      "count": 262144
+    },
+    {
+      "name": "ll_b1",
+      "shape": [
+        512
+      ],
+      "offset": 1107968,
+      "count": 512
+    },
+    {
+      "name": "ll_w2",
+      "shape": [
+        512,
+        512
+      ],
+      "offset": 1110016,
+      "count": 262144
+    },
+    {
+      "name": "ll_b2",
+      "shape": [
+        512
+      ],
+      "offset": 2158592,
+      "count": 512
+    },
+    {
+      "name": "ll_w3",
+      "shape": [
+        256,
+        512
+      ],
+      "offset": 2160640,
+      "count": 131072
+    },
+    {
+      "name": "ll_b3",
+      "shape": [
+        256
+      ],
+      "offset": 2684928,
+      "count": 256
+    },
+    {
+      "name": "ll_w4",
+      "shape": [
+        4,
+        256
+      ],
+      "offset": 2685952,
+      "count": 1024
+    },
+    {
+      "name": "ll_b4",
+      "shape": [
+        4
+      ],
+      "offset": 2690048,
+      "count": 4
+    },
+    {
+      "name": "low_level_log_std",
+      "shape": [
+        4
+      ],
+      "offset": 2690064,
+      "count": 4
+    }
+  ],
+  "weights_file": "weights.bin",
+  "dtype": "float32"
+}
