@@ -295,10 +295,11 @@ export const GAMES = {
     ],
     numSkills: 5,
     // Shown next to each skill button in the panel. Free text -- edit these.
-    skillNames: ["Skill 1", "Skill 2", "Skill 3", "Skill 4", "Skill 5"],
+    skillNames: ["Forward with Guard", "Crab Pose", "Poke", "Turn Left", "Guard"],
     // Number key -> skill index (key 1 is entry 0). Reorders the buttons and the
     // keyboard without touching the policy's own skill numbering above.
-    keySkills: [0, 1, 2, 3, 4],
+    // Buttons: Turn Left, Forward with Guard, Crab Pose, Guard, Poke.
+  keySkills: [3, 0, 1, 4, 2],
     tips: [
       // Tips for this task go here, one string per line.
     ],

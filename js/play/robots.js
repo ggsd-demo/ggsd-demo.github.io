@@ -83,8 +83,9 @@ export const ANT_FENCING = {
   title: "Ant - AntFencing",
   policy: "exports/ant_fencing/policy.json",
   // Shown next to each skill button in the panel. Free text -- edit these.
-  skillNames: ["Skill 1", "Skill 2", "Skill 3", "Skill 4", "Skill 5"],
-  keySkills: [0, 1, 2, 3, 4],
+  skillNames: ["Forward with Guard", "Crab Pose", "Poke", "Turn Left", "Guard"],
+  // Buttons: Turn Left, Forward with Guard, Crab Pose, Guard, Poke.
+  keySkills: [3, 0, 1, 4, 2],
   checkpoint: "dual_ant_hierarchical/ant_fencing_foefixed_seed2/model_70000.pt",
 };
 
