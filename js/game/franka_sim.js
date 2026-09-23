@@ -125,6 +125,8 @@ export class MujocoFrankaHockeyEnv {
     this.puckQ = qadr[pj]; this.puckV = dadr[pj]; this.puckBid = bmap["puck"];
     const gmap = nameMap(mujoco, model, OBJ_GEOM, model.ngeom);
     this.puckGid = gmap["puck"]; this.railGids = new Set(cfg.railGeoms.map((n) => gmap[n])); this.tableGid = gmap[cfg.tableGeom];
+    this.lidGid = cfg.lidGeom && gmap[cfg.lidGeom] !== undefined ? gmap[cfg.lidGeom] : -1;
+    this._puckQposBefore = new Float64Array(7);
     this.pendingBounce = new Map();   // other geom id -> {vin, n}
     // PhysX rigid-body damping of the puck: force = -c m v, torque = -c I w.
     const pm = model.body_mass[this.puckBid], pin = model.body_inertia;
@@ -324,9 +326,11 @@ export class MujocoFrankaHockeyEnv {
       this.mujoco.mj_step1(this.model, this.data);
       const touching = this._puckContacts();
       this._captureBounces(touching);
+      for (let k = 0; k < 7; k++) this._puckQposBefore[k] = this.data.qpos[this.puckQ + k];
       this.mujoco.mj_step2(this.model, this.data);
       this._clampJointVel();
       this._releaseBounces(touching);
+      this._clampPuckVel(this._puckQposBefore);
     }
     // mj_step leaves xpos/cvel at the pre-integration state; refresh for the observation.
     this.mujoco.mj_forward(this.model, this.data);
@@ -351,6 +355,7 @@ export class MujocoFrankaHockeyEnv {
   }
   _restitution(g) {
     const c = this.cfg;
+    if (g === this.lidGid) return 0;
     return this.railGids.has(g) ? c.restitutionRail : g === this.tableGid ? c.restitutionTable : c.restitutionArm;
   }
   _puckVn(g, n) {
@@ -376,6 +381,36 @@ export class MujocoFrankaHockeyEnv {
         this.pendingBounce.delete(g);
       }
     }
+  }
+
+  // Cap the puck's speed after a substep (PhysX max_depenetration_velocity / max_angular_velocity
+  // stand-in; mirror of _clamp_puck_vel): a puck pinched between the arm and the table can leave
+  // a MuJoCo solve at 10+ m/s. When the cap bites, the pose is re-integrated from the pre-step
+  // pose with the capped velocity, so the blow-up never moves it either.
+  _clampPuckVel(qposBefore) {
+    const c = this.cfg, qv = this.data.qvel, v = this.puckV;
+    let hit = false;
+    if (c.puckMaxLinVel > 0) {
+      const n = Math.hypot(qv[v], qv[v + 1], qv[v + 2]);
+      if (n > c.puckMaxLinVel) { const s = c.puckMaxLinVel / n; qv[v] *= s; qv[v + 1] *= s; qv[v + 2] *= s; hit = true; }
+    }
+    if (c.puckMaxAngVel > 0) {
+      const n = Math.hypot(qv[v + 3], qv[v + 4], qv[v + 5]);
+      if (n > c.puckMaxAngVel) { const s = c.puckMaxAngVel / n; qv[v + 3] *= s; qv[v + 4] *= s; qv[v + 5] *= s; hit = true; }
+    }
+    if (!hit) return;
+    const dt = this.model.opt.timestep, qp = this.data.qpos, q = this.puckQ;
+    for (let k = 0; k < 3; k++) qp[q + k] = qposBefore[k] + qv[v + k] * dt;
+    // mju_quatIntegrate: rotate the pre-step quaternion by the body-local angular velocity * dt
+    const wx = qv[v + 3] * dt, wy = qv[v + 4] * dt, wz = qv[v + 5] * dt, ang = Math.hypot(wx, wy, wz);
+    const [w0, x0, y0, z0] = [qposBefore[3], qposBefore[4], qposBefore[5], qposBefore[6]];
+    if (ang < 1e-12) { qp[q + 3] = w0; qp[q + 4] = x0; qp[q + 5] = y0; qp[q + 6] = z0; return; }
+    const hs = Math.sin(0.5 * ang) / ang, w1 = Math.cos(0.5 * ang), x1 = wx * hs, y1 = wy * hs, z1 = wz * hs;
+    // q_new = q_before * dq  (Hamilton product, w x y z)
+    const rw = w0 * w1 - x0 * x1 - y0 * y1 - z0 * z1, rx = w0 * x1 + x0 * w1 + y0 * z1 - z0 * y1;
+    const ry = w0 * y1 - x0 * z1 + y0 * w1 + z0 * x1, rz = w0 * z1 + x0 * y1 - y0 * x1 + z0 * w1;
+    const nn = Math.hypot(rw, rx, ry, rz);
+    qp[q + 3] = rw / nn; qp[q + 4] = rx / nn; qp[q + 5] = ry / nn; qp[q + 6] = rz / nn;
   }
 
   // PhysX's max-joint-velocity cap, applied after integration (mirror of _clamp_joint_vel).
@@ -453,6 +488,7 @@ export function frankaHockeyConfig(rules = "play") {
     puckLinearDamping: F.puckLinearDamping, puckAngularDamping: F.puckAngularDamping,
     restitutionRail: F.restitutionRail, restitutionTable: F.restitutionTable, restitutionArm: F.restitutionArm,
     bounceThreshold: F.bounceThreshold, railGeoms: F.railGeoms, tableGeom: F.tableGeom,
+    lidGeom: F.lidGeom, puckMaxLinVel: F.puckMaxLinVel, puckMaxAngVel: F.puckMaxAngVel,
     // shared player switches (no arena for this game; kept so the UI code can read them)
     boundaryMin: [-0.5 * F.tableLength, -0.5 * F.tableWidth], boundaryMax: [0.5 * F.tableLength, 0.5 * F.tableWidth],
     randomizeSpawnPositions: true, randomizeSpawnYaw: false, noFoe: false,

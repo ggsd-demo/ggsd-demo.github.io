@@ -17,6 +17,10 @@
   The puck's per-DoF damping (PhysX linear 0.25 / angular 2.0) is written by the env at load, and
   the env applies PhysX-style restitution to the puck explicitly (rails 0.9, table 0.225, arms
   0.35, bounce threshold 0.2 m/s): the MuJoCo contacts here are stiff and critically damped.
+  Puck containment (MuJoCo-only, see franka_transfer_cfg): the rails reach below the table top
+  (0.65..0.85, 0.1 thick outward, inner faces as in Isaac), the table box is
+  0.3 thick, an invisible puck-only lid (contype=16 conaffinity=8) sits 0.8 up, and the env caps
+  the puck at 5 m/s / 100 rad/s per substep (PhysX max_depenetration_velocity style).
 
   Colors are the Isaac play clip's: white shell, dark trim repainted per side (me blue, foe
   red), dark green table, light grey rails, green/red goal zones, yellow puck.
@@ -129,13 +133,15 @@
     <light name="light" pos="0 0 6" dir="0 0 -1" diffuse="0.8 0.8 0.8" castshadow="false"/>
     <geom name="floor" type="plane" pos="0 0 0" size="10 10 0.1" material="grid" contype="4" conaffinity="11" condim="3" friction="1 0.5 0.5"/>
 
-    <geom name="table" type="box" size="0.9 0.5 0.025" pos="0 0 0.725" class="table" contype="4" conaffinity="11" rgba="0.22 0.28 0.24 1"/>
-    <geom name="rail_left"  type="box" size="0.92 0.01 0.03" pos="0 0.51 0.78" class="rail" contype="4" conaffinity="11"/>
-    <geom name="rail_right" type="box" size="0.92 0.01 0.03" pos="0 -0.51 0.78" class="rail" contype="4" conaffinity="11"/>
-    <geom name="rail_me_top"     type="box" size="0.01 0.15 0.03" pos="-0.91 0.35 0.78" class="rail" contype="4" conaffinity="11"/>
-    <geom name="rail_me_bottom"  type="box" size="0.01 0.15 0.03" pos="-0.91 -0.35 0.78" class="rail" contype="4" conaffinity="11"/>
-    <geom name="rail_foe_top"    type="box" size="0.01 0.15 0.03" pos="0.91 0.35 0.78" class="rail" contype="4" conaffinity="11"/>
-    <geom name="rail_foe_bottom" type="box" size="0.01 0.15 0.03" pos="0.91 -0.35 0.78" class="rail" contype="4" conaffinity="11"/>
+    <geom name="table" type="box" size="0.9 0.5 0.15" pos="0 0 0.6" class="table" contype="4" conaffinity="11" rgba="0.22 0.28 0.24 1"/>
+    <geom name="rail_left"  type="box" size="1 0.05 0.1" pos="0 0.55 0.75" class="rail" contype="4" conaffinity="11"/>
+    <geom name="rail_right" type="box" size="1 0.05 0.1" pos="0 -0.55 0.75" class="rail" contype="4" conaffinity="11"/>
+    <geom name="rail_me_top"     type="box" size="0.05 0.15 0.1" pos="-0.95 0.35 0.75" class="rail" contype="4" conaffinity="11"/>
+    <geom name="rail_me_bottom"  type="box" size="0.05 0.15 0.1" pos="-0.95 -0.35 0.75" class="rail" contype="4" conaffinity="11"/>
+    <geom name="rail_foe_top"    type="box" size="0.05 0.15 0.1" pos="0.95 0.35 0.75" class="rail" contype="4" conaffinity="11"/>
+    <geom name="rail_foe_bottom" type="box" size="0.05 0.15 0.1" pos="0.95 -0.35 0.75" class="rail" contype="4" conaffinity="11"/>
+    <!-- Invisible lid (alpha 0): collides with the puck only; the env gives it restitution 0 -->
+    <geom name="lid" type="box" size="1 0.6 0.05" pos="0 0 0.85" class="table" contype="16" conaffinity="8" rgba="0 0 0 0"/>
     <!-- Goal zones: visual only (Isaac me/foe_goal_zone_cfg, collision disabled) -->
     <geom name="zone_me"  type="box" size="0.08 0.2 0.001" pos="-0.82 0 0.7511" contype="0" conaffinity="0" rgba="0.25 0.80 0.35 1"/>
     <geom name="zone_foe" type="box" size="0.08 0.2 0.001" pos="0.82 0 0.7511" contype="0" conaffinity="0" rgba="0.90 0.30 0.25 1"/>
