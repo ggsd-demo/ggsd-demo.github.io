@@ -224,7 +224,9 @@ function endEpisode(kind, now) {
   else { s.fail++; els.hudResult.className = "result lose"; }
   els.hudResult.textContent = label;
   els.flashText.textContent = label.toUpperCase();
+  els.flashSub.textContent = "";
   els.flash.classList.toggle("goal", kind === "goal");
+  els.flash.classList.remove("draw");
   els.flash.classList.remove("on"); void els.flash.offsetWidth;   // restart the animation
   els.flash.classList.add("on");
   state.pendingReset = now + 1500;
@@ -257,7 +259,7 @@ function cacheEls() {
                     "skillBtns", "skillLabel", "fallRow", "followRow",
                     "hudScene", "hudSkill", "hudCtr", "hudTime",
                     "hudGoalLine", "hudGoal", "hudResult", "hudStats",
-                    "flash", "flashText"]) els[id] = $(id);
+                    "flash", "flashText", "flashSub"]) els[id] = $(id);
   els.canvas = $("canvasPlay");
 }
 

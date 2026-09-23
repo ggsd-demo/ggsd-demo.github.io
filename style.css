@@ -111,15 +111,20 @@ input[type=checkbox], input[type=radio] { width: 16px; height: 16px; accent-colo
 .stats { font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; }
 body[data-mode="game"] .stats { font-size: 14px; }
 
-/* Episode end (Playground): a coloured vignette plus a large banner, red for a fall and
-   green for a goal, played once per event (see js/play/mode.js). */
+/* Episode / match end: a coloured vignette plus a large banner, played once per event.
+   Playground (js/play/mode.js): red for a fall or time-out, green for a goal. Game Play
+   (js/game/mode.js): green when you win, red when the foe wins, grey for a draw, with
+   the reason on a second line; the match holds on its last frame meanwhile. */
 .flash { position: fixed; inset: 0; z-index: 9; pointer-events: none; opacity: 0;
-  display: flex; align-items: center; justify-content: center;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
   --flash-rgb: 255, 60, 60;
   background: radial-gradient(ellipse at center, rgba(var(--flash-rgb), 0.15) 0%, rgba(var(--flash-rgb), 0.55) 100%); }
 .flash.goal { --flash-rgb: 50, 220, 130; }
+.flash.draw { --flash-rgb: 150, 160, 180; }
 .flash span { font-size: clamp(48px, 12vw, 140px); font-weight: 900; letter-spacing: 6px; color: #fff;
   text-shadow: 0 0 24px rgba(var(--flash-rgb), 0.9), 0 4px 18px rgba(0, 0, 0, 0.6); }
+.flash span.sub { font-size: clamp(18px, 3vw, 36px); font-weight: 700; letter-spacing: 2px; margin-top: 8px; }
+.flash span.sub:empty { display: none; }
 .flash.on { animation: fallflash 1.5s ease-out forwards; }
 @keyframes fallflash { 0% { opacity: 0; } 8% { opacity: 1; } 60% { opacity: 1; } 100% { opacity: 0; } }
 

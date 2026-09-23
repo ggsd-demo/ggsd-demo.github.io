@@ -60,6 +60,7 @@ const state = {
   runKey: null,              // selected committed run (GAMES[key].runs)
   obsDim: TRANSFER.obsDim, numActions: TRANSFER.numActions, controlDt: 1 / 60,
   loading: false,
+  pendingReset: null,        // performance.now() at which a finished match resets (banner up)
   exportData: null,          // current {meta, buffer} of the committed run
   llSlice: { start: 0, end: 0 },  // low-level obs slice the active checkpoint reports
   hlUsable: true,            // high-level net matches this env's obs -> can pick skills
@@ -114,6 +115,7 @@ async function loadGame(key) {
     frameGame();
     syncSettingsUI();
 
+    cancelHold();
     env.reset(true);
     state.me.ctr = 0; state.foe.ctr = 0;
     state.renderer.update(data);
@@ -256,8 +258,18 @@ function setHlUsable(ok, reason) {
   refreshSkillButtons();
 }
 
-function controlStep() {
+function controlStep(now) {
   const { env, policy, foePolicy } = state;
+  // A finished match holds on its last frame while the banner is up, then resets.
+  if (state.pendingReset != null) {
+    if (now >= state.pendingReset) {
+      state.pendingReset = null;
+      env.reset(true);
+      state.me.ctr = 0; state.foe.ctr = 0;
+      pushTrails(true);
+    }
+    return;
+  }
   // ---- me ----
   const obsMe = env.buildObs("me", "foe");
   if (state.me.ctr <= 0) {
@@ -286,7 +298,7 @@ function controlStep() {
   env.step();
 
   const { terminated, timeout, winner, reason } = env.checkDone();
-  if (terminated || timeout) endEpisode(winner, reason);
+  if (terminated || timeout) endEpisode(winner, reason, now);
   else {
     // A round reset inside a match (franka: non-final goal / idle puck) restarts the
     // trails and the skill holds, like the Isaac play script's per-reset hooks.
@@ -296,17 +308,31 @@ function controlStep() {
   }
 }
 
-function endEpisode(winner, reason) {
+// The match freezes on its final frame for RESULT_HOLD_MS under a full-screen banner
+// (green for a win, red for a loss, grey for a draw), like the Playground's episode end.
+const RESULT_HOLD_MS = 1500;
+function endEpisode(winner, reason, now) {
   const s = state.stats; s.ep++;
   if (winner === 1) s.win++; else if (winner === -1) s.lose++; else s.draw++;
-  state.env.reset(true);
-  state.me.ctr = 0; state.foe.ctr = 0;
-  pushTrails(true);
+  els.flashText.textContent = winner === 1 ? "YOU WIN!" : winner === -1 ? "FOE WINS" : "DRAW";
+  els.flashSub.textContent = reason || "";
+  els.flash.classList.toggle("goal", winner === 1);
+  els.flash.classList.toggle("draw", winner === 0 || winner == null);
+  els.flash.classList.remove("on"); void els.flash.offsetWidth;   // restart the animation
+  els.flash.classList.add("on");
+  state.pendingReset = now + RESULT_HOLD_MS;
   updateHud(reason, winner);
+}
+
+// Drop a pending end-of-match hold (a Reset, a game / run switch, leaving the mode).
+function cancelHold() {
+  state.pendingReset = null;
+  els.flash.classList.remove("on");
 }
 
 function resetEpisode() {
   if (!state.env) return;
+  cancelHold();
   state.env.reset(true); state.me.ctr = 0; state.foe.ctr = 0; pushTrails(true);
   // Games that name a default button start every match on it (the Franka: Q). Only the
   // Reset button comes through here; a match that ends on its own keeps the pick.
@@ -322,7 +348,7 @@ function frame(now) {
   if (state.running && !state.loading && state.renderer) {
     state.acc += dt;
     let n = 0;
-    while (state.acc >= state.controlDt && n < 8) { controlStep(); state.acc -= state.controlDt; n++; }
+    while (state.acc >= state.controlDt && n < 8) { controlStep(now); state.acc -= state.controlDt; n++; }
     state.renderer.update(state.data);
   }
   if (state.renderer) state.renderer.render();
@@ -335,6 +361,7 @@ function frame(now) {
 function cacheEls() {
   for (const id of ["status", "play", "modeAuto", "modePlayable",
                     "hudLeft", "hudMax", "hudResult", "hudStats", "skillBtns",
+                    "flash", "flashText", "flashSub",
                     "runSelect", "runRow", "envHint", "hudHp", "hudHpLine", "skillLabel",
                     "hudScoreLine", "hudScore"]) els[id] = $(id);
   els.canvas = $("canvasGame");
@@ -530,6 +557,7 @@ export const GameMode = {
   // renderer keeps its last meshes; the next activate rebuilds them).
   deactivate() {
     state.running = false;
+    cancelHold();
     const { model, data } = state;
     state.env = null; state.model = null; state.data = null;
     if (data && data.delete) { try { data.delete(); } catch (e) {} }
