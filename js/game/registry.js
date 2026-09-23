@@ -79,6 +79,29 @@ export const TRAIN = {
   randomizeSpawnYaw: false,
 };
 
+// Ant fencing (DualAnt-Hierarchical-Fencing -> DualAntHierarchicalFencingEnvCfg, run
+// ant_fencing_foefixed_seed2): the SAME ant, arena, observation and action as sumo, plus
+// one more way to lose -- a front foot of the opponent pressing on your torso (the two
+// contact sensors of the Isaac cfg, force > contact_hit_force_threshold) ends the match at
+// once. A fall / push-out still loses, both defeated in one step is a draw, the 10 s
+// timeout is a draw. Spawn: ±4 arena, margin 0.4, min separation 1.0, each yaw uniform.
+export const FENCING = {
+  weaponBodies: ["front_left_foot_body", "front_right_foot_body"],   // <side>_ prefix added
+  targetBody: "torso",
+  hitForceThreshold: 1.0,      // N, on the contact normal force
+};
+export const FENCING_TRAIN = {
+  boundaryMin: [-4.0, -4.0],
+  boundaryMax: [4.0, 4.0],
+  meSpawnPos: [-1.0, 0.0, 0.5],   // fixed-spawn face-off (randomize off)
+  foeSpawnPos: [1.0, 0.0, 0.5],
+  spawnBoundaryMargin: 0.4,
+  spawnMinSeparation: 1.0,
+  spawnSeparationMaxAttempts: 20,
+  randomizeSpawnPositions: true,
+  randomizeSpawnYaw: true,
+};
+
 // ===========================================================================
 // G1 boxing — JS mirror of shared/g1_transfer_cfg.py. Two Unitree G1 humanoids
 // box in a ±5 ring: 23 DoF (wrists welded), PD position control, 194-dim
@@ -230,7 +253,8 @@ export const FRANKA = {
   cameraFov: 14,            // vertical deg; Isaac's viewport lens frames the table this tightly from that eye
 };
 
-// Playable games. ant_sumo, g1_boxing and franka_hockey are implemented.
+// Playable games. All four are implemented. `robot` names the Robot dropdown entry
+// (play/robots.js ROBOTS) the game hangs off: the two ant games are two entries there.
 export const GAMES = {
   ant_sumo: {
     title: "Ant Sumo",
@@ -255,8 +279,31 @@ export const GAMES = {
     ],
     description: "Two ants sumo: push the opponent out of the ring or topple it.",
   },
-  ant_boxing: { title: "Ant Fencing", robot: "ant", implemented: false,
-    description: "Two ants fence (not implemented yet)." },
+  ant_fencing: {
+    title: "Ant Fencing",
+    robot: "ant_fencing",
+    implemented: true,
+    // The same two-ant model as sumo (the front feet are the darker capsules).
+    mjcf: "exports/ant_sumo/ant.xml",
+    policy: "exports/ant_fencing/ckpts/ant_fencing_foefixed_seed2_70000/policy.json",
+    // Selectable runs: full hierarchical exports (export_policy.py --game ant_fencing) under
+    // exports/ant_fencing/ckpts/<key>/. exports/ant_fencing/policy.json is the same
+    // checkpoint's low level for the Playground's Practice scene.
+    runs: [
+      { key: "ant_fencing_foefixed_seed2_70000", label: "ant_fencing_foefixed seed2 · iter 70000",
+        checkpoint: "dual_ant_hierarchical/ant_fencing_foefixed_seed2/model_70000.pt" },
+    ],
+    numSkills: 5,
+    // Shown next to each skill button in the panel. Free text -- edit these.
+    skillNames: ["Skill 1", "Skill 2", "Skill 3", "Skill 4", "Skill 5"],
+    // Number key -> skill index (key 1 is entry 0). Reorders the buttons and the
+    // keyboard without touching the policy's own skill numbering above.
+    keySkills: [0, 1, 2, 3, 4],
+    tips: [
+      // Tips for this task go here, one string per line.
+    ],
+    description: "Two ants fence: touch the opponent's body with a front foot, or push it out / topple it.",
+  },
   franka_hockey: {
     title: "Franka AirHockey",
     robot: "franka",

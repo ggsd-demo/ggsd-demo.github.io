@@ -30,7 +30,7 @@ export const ANT_DEFAULT_JOINT_POS = [0, 0, 0, 0, 0.785398, -0.785398, -0.785398
 
 export const ANT = {
   key: "ant",
-  title: "Ant",
+  title: "Ant - AntSumo",
   mjcf: "exports/ant/ant_single.xml",
   policy: "exports/ant/policy.json",
   jointOrder: ANT_JOINT_ORDER, jointLo: ANT_JOINT_LO, jointHi: ANT_JOINT_HI,
@@ -73,6 +73,19 @@ export const ANT = {
     ["Arena spawn", "Turned to face +x like the corridor tasks (Isaac SingleAnt-Play leaves the ant facing +y), so every scene opens with the same view."],
     ["Not re-tuned", "The ant was validated against an Isaac reference (obs 2e-7, action 1e-6) but its physics was not re-tuned in the G1 pass."],
   ],
+};
+
+// The same ant driven by the fencing checkpoint's low level (ant_fencing_foefixed_seed2):
+// same joints, obs and control, its own skills. Its game is ant_fencing (game/registry.js).
+export const ANT_FENCING = {
+  ...ANT,
+  key: "ant_fencing",
+  title: "Ant - AntFencing",
+  policy: "exports/ant_fencing/policy.json",
+  // Shown next to each skill button in the panel. Free text -- edit these.
+  skillNames: ["Skill 1", "Skill 2", "Skill 3", "Skill 4", "Skill 5"],
+  keySkills: [0, 1, 2, 3, 4],
+  checkpoint: "dual_ant_hierarchical/ant_fencing_foefixed_seed2/model_70000.pt",
 };
 
 // ---------------------------------------------------------------------------
@@ -251,4 +264,4 @@ export const FRANKA = {
   ],
 };
 
-export const ROBOTS = { ant: ANT, franka: FRANKA, g1: G1 };
+export const ROBOTS = { ant: ANT, ant_fencing: ANT_FENCING, franka: FRANKA, g1: G1 };

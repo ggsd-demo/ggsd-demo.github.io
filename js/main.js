@@ -14,10 +14,10 @@
 // and panel / HUD rows (see style.css .only-play / .only-game).
 //
 // URL: ?robot=ant|g1|franka&scene=<scene key>|game opens straight into one task, and
-// ?game=ant_sumo|g1_boxing|franka_hockey into one game (the old /game/ links).
+// ?game=ant_sumo|ant_fencing|g1_boxing|franka_hockey into one game (the old /game/ links).
 
 import load_mujoco from "../lib/mujoco_wasm.js";
-import { ROBOTS } from "./play/robots.js";
+import { ROBOTS } from "./play/robots.js";   // ant, ant_fencing, franka, g1
 import { SCENES } from "./play/scenes.js";
 import { GAMES } from "./game/registry.js";
 import { PlayMode } from "./play/mode.js";

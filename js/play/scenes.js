@@ -154,6 +154,17 @@ export const SCENES = {
       description: "6×6 maze on a 45° view. Walk to the red disc in the far corner: 64 m shortest route, 11 turns, 5 dead ends.",
     }),
   ],
+  // The fencing ant practises its own skills on the same open floor; its other task is the
+  // game (main.js adds "Game Play: Ant Fencing" to the Task dropdown).
+  ant_fencing: [
+    scene("arena", "Practice", {
+      spawnYaw: -Math.PI / 2, camera: { eye: [-9.8, 3.5, 5.85], lookat: [0, 0, 0.6] },
+      tips: [
+        // Tips for this task go here, one string per line.
+      ],
+      description: "Open floor. Practice the skills: keys 1-5 pick the skill.",
+    }),
+  ],
   g1: [
     // Centred on the spawn, as for the Ant.
     scene("arena", "Practice", {

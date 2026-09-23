@@ -24,7 +24,7 @@
 // "pd_position" (g1, <position> target; PD lives in the MJCF).
 
 import {
-  ISAAC_JOINT_ORDER, JOINT_LO, JOINT_HI, DEFAULT_JOINT_POS, TRANSFER,
+  ISAAC_JOINT_ORDER, JOINT_LO, JOINT_HI, DEFAULT_JOINT_POS, TRANSFER, FENCING, FENCING_TRAIN,
   G1_JOINT_ORDER, G1_JOINT_LO, G1_JOINT_HI, G1_DEFAULT_JOINT_POS, G1_ACTION_SCALE, G1,
 } from "./registry.js";
 
@@ -117,6 +117,16 @@ export class MujocoDualEnv {
     this.stepCount = 0;
     this._obs = new Float64Array(cfg.obsDim);
     this.hp = null;
+    // Fencing: the attacker's weapon bodies (front feet) against the defender's torso.
+    this.hit = null;
+    if (cfg.fencing) {
+      this.weaponIds = {}; this.targetId = {};
+      for (const s of this.sides) {
+        this.weaponIds[s] = cfg.fencing.weaponBodies.map((n) => bmap[`${s}_${n}`]);
+        this.targetId[s] = bmap[`${s}_${cfg.fencing.targetBody}`];
+      }
+      this.hit = { me: false, foe: false };    // me: my foot is on the foe's torso
+    }
     if (cfg.obsLayout === "g1") {
       const mass = model.body_mass;
       this.gloveIds = {}; this.targetIds = {}; this.torsoId = {}; this.termId = {};
@@ -165,6 +175,7 @@ export class MujocoDualEnv {
       this.hp.me = c.initialHp; this.hp.foe = c.initialHp;
       for (const s of this.sides) this.prevStrike[s].fill(0);
     }
+    if (this.hit) { this.hit.me = false; this.hit.foe = false; }
     this.mujoco.mj_forward(this.model, this.data);
   }
 
@@ -431,9 +442,37 @@ export class MujocoDualEnv {
     for (let i = 0; i < this.cfg.decimation; i++) this.mujoco.mj_step(this.model, this.data);
     // mj_step leaves xpos/cvel/contacts at the pre-integration state; refresh them so
     // the observation and damage see the post-step state, as Isaac does.
-    if (this.hp) this.mujoco.mj_forward(this.model, this.data);
+    if (this.hp || this.hit) this.mujoco.mj_forward(this.model, this.data);
     this.stepCount++;
     if (this.hp) this._applyPunchDamage();
+    if (this.hit) this._computeFencingHits();
+  }
+
+  // DualAntEnv._compute_fencing_hits: a side has landed a hit when the contact force
+  // between one of its weapon bodies (front feet) and the opponent's torso exceeds the
+  // threshold. Isaac's contact sensor reports the net force of the pair; here the normal
+  // force of each contact stands in for it (the tangential part only adds to the norm, so
+  // this fires no earlier than Isaac would). The ant MJCF uses the default pyramidal cone:
+  // a condim-3 contact owns 2 * (dim - 1) rows of efc_force whose sum is the normal force.
+  _computeFencingHits() {
+    const d = this.data, gb = this.model.geom_bodyid, efc = d.efc_force;
+    const thr = this.cfg.fencing.hitForceThreshold;
+    const force = new Map();   // "attackerBody:targetBody" -> summed normal force
+    for (let i = 0; i < d.ncon; i++) {
+      const ct = d.contact.get(i);
+      if (ct.efc_address < 0) continue;
+      const rows = ct.dim === 1 ? 1 : 2 * (ct.dim - 1);
+      let fn = 0;
+      for (let k = 0; k < rows; k++) fn += efc[ct.efc_address + k];
+      const b1 = gb[ct.geom1], b2 = gb[ct.geom2];
+      force.set(b1 + ":" + b2, (force.get(b1 + ":" + b2) || 0) + fn);
+      force.set(b2 + ":" + b1, (force.get(b2 + ":" + b1) || 0) + fn);
+    }
+    for (const [atk, def] of [["me", "foe"], ["foe", "me"]]) {
+      if (this.cfg.noFoe) { this.hit[atk] = false; continue; }
+      const tg = this.targetId[def];
+      this.hit[atk] = this.weaponIds[atk].some((w) => (force.get(w + ":" + tg) || 0) > thr);
+    }
   }
 
   // DualG1Env punch damage, hand_vel_perp_sq: per (glove, target) the closing speed
@@ -493,17 +532,25 @@ export class MujocoDualEnv {
     return z < this.cfg.terminationHeight;
   }
 
-  // Ant: a fall/out is a loss. G1 (HP present): DualG1Env semantics -- HP-out or the
-  // HP lead at timeout decides; a fall/out with no HP-out only stops the episode.
+  // Ant: a fall/out is a loss; fencing adds a front foot on the torso (DualAntEnv
+  // _get_dones: me_defeated = out | fallen | foe_hits_me_torso, both defeated = draw).
+  // G1 (HP present): DualG1Env semantics -- HP-out or the HP lead at timeout decides; a
+  // fall/out with no HP-out only stops the episode.
   checkDone() {
     const c = this.cfg;
     const meArena = this._outOfBounds("me") || this._fallen("me");
     const foeArena = !c.noFoe && (this._outOfBounds("foe") || this._fallen("foe"));
     if (!this.hp) {
+      const meHit = !!(this.hit && this.hit.foe), foeHit = !!(this.hit && this.hit.me);   // whose torso was hit
+      const meDef = meArena || meHit, foeDef = foeArena || foeHit;
       const timeout = this.stepCount >= c.maxEpisodeSteps;
-      const terminated = meArena || foeArena;
-      const winner = foeArena && !meArena ? 1 : meArena && !foeArena ? -1 : 0;
-      return { terminated, timeout, winner, reason: terminated ? "fall/out" : "timeout" };
+      const terminated = meDef || foeDef;
+      const winner = foeDef && !meDef ? 1 : meDef && !foeDef ? -1 : 0;
+      const cause = (arena, hit) => (hit ? "touch" : "fall/out");
+      const reason = !terminated ? "timeout"
+        : meDef && foeDef ? "both defeated"
+        : foeDef ? `foe ${cause(foeArena, foeHit)}` : `me ${cause(meArena, meHit)}`;
+      return { terminated, timeout, winner, reason };
     }
     const meHp = this.hp.me <= 0, foeHp = !c.noFoe && this.hp.foe <= 0;
     const terminated = meArena || foeArena || meHp || foeHp;
@@ -555,6 +602,13 @@ export function antSumoConfig() {
     randomizeSpawnPositions: false,
     randomizeSpawnYaw: false,
   };
+}
+
+// Build the ant_fencing GameConfig: sumo's, plus the fencing contact rule and its spawn.
+export function antFencingConfig() {
+  return { ...antSumoConfig(), fencing: FENCING,
+           spawnBoundaryMargin: FENCING_TRAIN.spawnBoundaryMargin,
+           spawnMinSeparation: FENCING_TRAIN.spawnMinSeparation };
 }
 
 // Build the g1_boxing GameConfig (mirror of games/g1_boxing.make_config) from G1.

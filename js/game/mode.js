@@ -12,10 +12,11 @@
 // the GameMode object at the bottom (activate / deactivate / frame / ...); everything
 // else in here is the game loop and its own panel rows (Max seconds, Auto / Playable).
 
-import { GAMES, TRANSFER, TRAIN, G1, G1_TRAIN, FRANKA } from "./registry.js";
+import { GAMES, TRANSFER, TRAIN, FENCING_TRAIN, G1, G1_TRAIN, FRANKA } from "./registry.js";
 import { MujocoRenderer } from "./render.js";
 import { HierarchicalPolicy } from "./policy.js";
 import * as antSumo from "./games/ant_sumo.js";
+import * as antFencing from "./games/ant_fencing.js";
 import * as g1Boxing from "./games/g1_boxing.js";
 import * as frankaHockey from "./games/franka_hockey.js";
 
@@ -24,6 +25,8 @@ import * as frankaHockey from "./games/franka_hockey.js";
 const GAME_MODULES = {
   ant_sumo: { mod: antSumo, train: TRAIN, simDt: TRANSFER.simDt, focusZ: 0.4, meshStyle: "metal",
               arena: "line", topZ: 0.8 },
+  ant_fencing: { mod: antFencing, train: FENCING_TRAIN, simDt: TRANSFER.simDt, focusZ: 0.4, meshStyle: "metal",
+                 arena: "line", topZ: 0.8 },
   // the boxers get the Isaac env's boxing-ring boundary (boundary_style="ring")
   g1_boxing: { mod: g1Boxing, train: G1_TRAIN, simDt: G1.simDt, focusZ: 0.9, meshStyle: "isaac",
                arena: "ring", topZ: 1.6 },
@@ -386,7 +389,8 @@ function syncSettingsUI() {
       `Play env (as in the clips): 1.8 x 1.0 m table, first to ${c.scoreToWin}, ${sec} s match, an idle puck resets the round.`;
     return;
   }
-  els.envHint.textContent = `Training env: arena ±${c.boundaryMax[0]}, ${sec} s match, fixed face-off spawn.`;
+  const rule = c.fencing ? " A front foot pressed on the opponent's body wins at once." : "";
+  els.envHint.textContent = `Training env: arena ±${c.boundaryMax[0]}, ${sec} s match, fixed face-off spawn.${rule}`;
 }
 
 // Number key slot (0-based) -> policy skill index, via registry.js `keySkills`; identity
