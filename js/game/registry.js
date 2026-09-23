@@ -245,7 +245,9 @@ export const FRANKA = {
   puckLinearDamping: 0.25, puckAngularDamping: 2.0,
   // explicit PhysX-style restitution of the puck (see franka_transfer_cfg.py): e per partner + bounce threshold
   restitutionRail: 0.9, restitutionTable: 0.225, restitutionArm: 0.35, bounceThreshold: 0.2,
-  railGeoms: ["rail_left", "rail_right", "rail_me_top", "rail_me_bottom", "rail_foe_top", "rail_foe_bottom"], tableGeom: "table",
+  railGeoms: ["rail_left", "rail_right", "rail_me_top", "rail_me_bottom", "rail_foe_top", "rail_foe_bottom",
+    "rail_left_skirt", "rail_right_skirt", "rail_me_top_skirt", "rail_me_bottom_skirt", "rail_foe_top_skirt", "rail_foe_bottom_skirt"],
+  tableGeom: "table",
   // puck containment (franka_transfer_cfg.py): the invisible puck-only lid (restitution 0) and the
   // per-substep speed caps that stand in for PhysX's max_depenetration_velocity / max_angular_velocity
   lidGeom: "lid", puckMaxLinVel: 5.0, puckMaxAngVel: 100.0,
