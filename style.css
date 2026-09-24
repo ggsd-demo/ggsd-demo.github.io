@@ -114,7 +114,9 @@ body[data-mode="game"] .stats { font-size: 14px; }
 /* Episode / match end: a coloured vignette plus a large banner, played once per event.
    Playground (js/play/mode.js): red for a fall or time-out, green for a goal. Game Play
    (js/game/mode.js): green when you win, red when the foe wins, grey for a draw, with
-   the reason on a second line; the match holds on its last frame meanwhile. */
+   the reason on a second line; the match holds on its last frame meanwhile. The Franka's
+   non-final goals use the same banner (GOAL! / FOE GOAL, the score below) with the sim
+   held on the scoring frame before the next round. */
 .flash { position: fixed; inset: 0; z-index: 9; pointer-events: none; opacity: 0;
   display: flex; flex-direction: column; align-items: center; justify-content: center;
   --flash-rgb: 255, 60, 60;

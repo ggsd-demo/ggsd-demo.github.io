@@ -142,6 +142,9 @@ export class MujocoFrankaHockeyEnv {
     this.idleInside = 0; this.idleOutside = 0; this.idleTimeout = false;
     this.hp = null;
     this.lastEvent = ""; this.roundResetFlag = false;
+    // Web player: a non-final goal can hold the sim on the scoring frame (goal banner) and
+    // reset the round later via finishRoundReset(). Off by default (Python-mirror parity).
+    this.holdGoalReset = false; this.goalResetPending = false;
     this._obs = new Float64Array(cfg.obsDim);
     this.reset(true);
   }
@@ -204,7 +207,7 @@ export class MujocoFrankaHockeyEnv {
   // every reset range (deterministic replays / parity).
   reset(randomize = true) {
     this.score.me = 0; this.score.foe = 0;
-    this.stepCount = 0; this.lastEvent = "";
+    this.stepCount = 0; this.lastEvent = ""; this.goalResetPending = false;
     this._randomize = randomize;   // round resets inside the match follow the match reset
     this.mujoco.mj_resetData(this.model, this.data);
     this._resetRound(randomize);
@@ -430,6 +433,7 @@ export class MujocoFrankaHockeyEnv {
   // (training rules) an idle puck. winner: 1 me / -1 foe / 0 draw.
   checkDone() {
     const c = this.cfg, p = this._puckPos();
+    if (this.goalResetPending) return { terminated: false, timeout: false, winner: 0, reason: "" };   // held on a goal
     const inGoalY = Math.abs(p[1]) <= 0.5 * c.goalWidth;
     const meScored = p[0] > c.goalXThreshold && inGoalY, foeScored = p[0] < -c.goalXThreshold && inGoalY;
     const out = Math.abs(p[0]) > 0.5 * c.tableLength || Math.abs(p[1]) > 0.5 * c.tableWidth;
@@ -459,9 +463,16 @@ export class MujocoFrankaHockeyEnv {
     }
     if (roundReset) {
       this.lastEvent = (meScored ? "goal me" : foeScored ? "goal foe" : "idle puck") + ", new round";
-      this._resetRound(this._randomize !== false);
+      if (nonfinalGoal && this.holdGoalReset) this.goalResetPending = true;   // the player resets the round after its banner
+      else this._resetRound(this._randomize !== false);
     }
     return { terminated: false, timeout: false, winner: 0, reason: "" };
+  }
+  // Ends a held goal (holdGoalReset): the round reset checkDone() deferred.
+  finishRoundReset() {
+    if (!this.goalResetPending) return;
+    this.goalResetPending = false;
+    this._resetRound(this._randomize !== false);
   }
 }
 

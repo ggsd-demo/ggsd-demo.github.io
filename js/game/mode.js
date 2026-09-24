@@ -64,6 +64,7 @@ const state = {
   obsDim: TRANSFER.obsDim, numActions: TRANSFER.numActions, controlDt: 1 / 60,
   loading: false,
   pendingReset: null,        // performance.now() at which a finished match resets (banner up)
+  pendingRoundReset: null,   // performance.now() at which a held goal (franka) starts the next round
   exportData: null,          // current {meta, buffer} of the committed run
   llSlice: { start: 0, end: 0 },  // low-level obs slice the active checkpoint reports
   hlUsable: true,            // high-level net matches this env's obs -> can pick skills
@@ -102,6 +103,7 @@ async function loadGame(key) {
     }
     state.gameKey = key; state.gameMod = entry.mod;
     state.model = model; state.data = data; state.env = env;
+    if ("holdGoalReset" in env) env.holdGoalReset = true;   // franka: hold the scoring frame under the goal banner
     state.obsDim = env.cfg.obsDim;
     state.numActions = env.cfg.numActions;
     state.controlDt = env.cfg.decimation * entry.simDt;
@@ -273,6 +275,17 @@ function controlStep(now) {
     }
     return;
   }
+  // A goal inside a match (franka) holds on the scoring frame under its banner, then the
+  // env starts the next round.
+  if (state.pendingRoundReset != null) {
+    if (now >= state.pendingRoundReset) {
+      state.pendingRoundReset = null;
+      env.finishRoundReset();
+      state.me.ctr = 0; state.foe.ctr = 0;
+      pushTrails(true);
+    }
+    return;
+  }
   // ---- me ----
   const obsMe = env.buildObs("me", "foe");
   if (state.me.ctr <= 0) {
@@ -308,7 +321,26 @@ function controlStep(now) {
     const roundReset = !!env.roundResetFlag;
     if (roundReset) { state.me.ctr = 0; state.foe.ctr = 0; if (env.lastEvent) { els.hudResult.textContent = env.lastEvent; els.hudResult.className = "result draw"; } }
     pushTrails(roundReset);
+    if (env.goalResetPending) goalScored(env.lastEvent.startsWith("goal me"), now);
   }
+}
+
+// A non-final goal: the sim holds on the scoring frame for GOAL_HOLD_MS under a full-screen
+// banner (green when you score, red when the foe does, the new score below), then the
+// round restarts. Same vignette as the match end.
+const GOAL_HOLD_MS = 1500;
+function goalScored(mine, now) {
+  const env = state.env;
+  els.flashText.textContent = mine ? "GOAL!" : "FOE GOAL";
+  els.flashSub.textContent = `${env.score.me} – ${env.score.foe}`;
+  els.flash.classList.toggle("goal", mine);
+  els.flash.classList.remove("draw");
+  els.flash.classList.remove("on"); void els.flash.offsetWidth;   // restart the animation
+  els.flash.classList.add("on");
+  state.pendingRoundReset = now + GOAL_HOLD_MS;
+  els.hudResult.textContent = env.lastEvent;
+  els.hudResult.className = "result " + (mine ? "win" : "lose");
+  updateHud("");
 }
 
 // The match freezes on its final frame for RESULT_HOLD_MS under a full-screen banner
@@ -330,6 +362,7 @@ function endEpisode(winner, reason, now) {
 // Drop a pending end-of-match hold (a Reset, a game / run switch, leaving the mode).
 function cancelHold() {
   state.pendingReset = null;
+  state.pendingRoundReset = null;
   els.flash.classList.remove("on");
 }
 
