@@ -279,6 +279,15 @@ export const GAMES = {
       { key: "ant_sumo_facing_60000", label: "ant_sumo_facing · iter 60000",
         checkpoint: "dual_ant_hierarchical/ant_sumo_facing/model_60000.pt" },
     ],
+    // The panel's Opponent dropdown: the checkpoint the FOE runs (me keeps the run above).
+    // The first entry is the default. Each is a full export under exports/ant_sumo/ckpts/.
+    opponents: [
+      { key: "hard", label: "Hard", title: "The same policy as yours (iteration 60000)",
+        policy: "exports/ant_sumo/ckpts/ant_sumo_facing_60000/policy.json" },
+      { key: "easy", label: "Easy", title: "An early checkpoint of the same run (iteration 10000)",
+        policy: "exports/ant_sumo/ckpts/ant_sumo_facing_10000/policy.json",
+        checkpoint: "dual_ant_hierarchical/ant_sumo_facing/model_10000.pt" },
+    ],
     numSkills: 5,
     // Shown next to each skill button in the panel. Free text -- edit these.
     skillNames: ["Move Forward-Right", "Sharp Turn Left", "Turn Left", "No-Op", "Push"],
@@ -303,6 +312,14 @@ export const GAMES = {
     runs: [
       { key: "ant_fencing_foefixed_seed2_70000", label: "ant_fencing_foefixed seed2 · iter 70000",
         checkpoint: "dual_ant_hierarchical/ant_fencing_foefixed_seed2/model_70000.pt" },
+    ],
+    // The panel's Opponent dropdown (see ant_sumo.opponents).
+    opponents: [
+      { key: "hard", label: "Hard", title: "The same policy as yours (iteration 70000)",
+        policy: "exports/ant_fencing/ckpts/ant_fencing_foefixed_seed2_70000/policy.json" },
+      { key: "easy", label: "Easy", title: "An early checkpoint of the same run (iteration 10000)",
+        policy: "exports/ant_fencing/ckpts/ant_fencing_foefixed_seed2_10000/policy.json",
+        checkpoint: "dual_ant_hierarchical/ant_fencing_foefixed_seed2/model_10000.pt" },
     ],
     numSkills: 5,
     // Shown next to each skill button in the panel. Free text -- edit these.

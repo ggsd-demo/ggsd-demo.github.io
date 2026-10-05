@@ -15,7 +15,7 @@
 import { GAMES, TRANSFER, TRAIN, FENCING_TRAIN, G1, G1_TRAIN, FRANKA } from "./registry.js";
 import { MujocoRenderer } from "./render.js";
 import { ARENA_FLOOR_PALETTE } from "../play/robots.js";
-import { HierarchicalPolicy } from "./policy.js";
+import { HierarchicalPolicy, fetchExport } from "./policy.js";
 import * as antSumo from "./games/ant_sumo.js";
 import * as antFencing from "./games/ant_fencing.js";
 import * as g1Boxing from "./games/g1_boxing.js";
@@ -62,6 +62,8 @@ const state = {
   foeNoop: false,
   gameKey: "ant_sumo", gameMod: null,   // active game
   runKey: null,              // selected committed run (GAMES[key].runs); both sides run it (self-play)
+  oppKey: null,              // selected opponent (GAMES[key].opponents); the foe runs its export instead
+  foeExport: null,           // that opponent's {meta, buffer}; null = self-play on me's export
   foeSkillDuration: TRANSFER.maxEpisodeSteps,
   obsDim: TRANSFER.obsDim, numActions: TRANSFER.numActions, controlDt: 1 / 60,
   loading: false,
@@ -113,8 +115,12 @@ async function loadGame(key) {
     const run = pickRun(key, state.runKey, GAMES[key].defaultRun);
     state.runKey = run ? run.key : null;
     const exp = await entry.mod.makeExport(state.runKey);
+    const opp = pickOpponent(key, state.oppKey);
+    state.foeExport = opp ? await fetchExport(opp.policy) : null;
+    state.oppKey = opp ? opp.key : null;
     state.stats = { win: 0, lose: 0, draw: 0, ep: 0 };
     populateRunSelect(key);
+    populateOppSelect(key);
     applyExport(exp);
 
     if (!state.renderer) { state.renderer = new MujocoRenderer(els.canvas, model, state.mujoco); state.renderer.setModel(model, entry.meshStyle, entry.floorPalette); }
@@ -252,10 +258,11 @@ function applyExport(exp) {
   }
 }
 
-// The foe's policy: self-play, me's export with an independent sampling seed and its own
-// skill duration. A high level that cannot run on this env leaves the foe standing and says so.
+// The foe's policy: the chosen opponent's export, else self-play on me's export, with an
+// independent sampling seed and its own skill duration. A high level that cannot run on
+// this env leaves the foe standing and says so.
 function applyFoeExport() {
-  const exp = state.exportData;
+  const exp = state.foeExport || state.exportData;
   state.foePolicy = null;
   state.foe.ctr = 0;
   if (!exp) return;
@@ -420,7 +427,7 @@ function cacheEls() {
   for (const id of ["status", "play", "modeAuto", "modePlayable",
                     "hudLeft", "hudMax", "hudResult", "hudStats", "skillBtns",
                     "flash", "flashText", "flashSub",
-                    "runSelect", "runRow", "runLabel", "envHint", "hudHp", "hudHpLine", "skillLabel",
+                    "runSelect", "runRow", "runLabel", "oppSelect", "oppRow", "envHint", "hudHp", "hudHpLine", "skillLabel",
                     "hudScoreLine", "hudScore"]) els[id] = $(id);
   els.canvas = $("canvasGame");
 }
@@ -544,6 +551,45 @@ function populateRunSelect(gameKey) {
   els.runLabel.textContent = "Policy";
   els.runRow.style.display = runs.length > 1 ? "" : "none";
 }
+function opponentsOf(gameKey) { return (GAMES[gameKey] && GAMES[gameKey].opponents) || []; }
+// The opponent for key `want` if the game has it, else its first (the default), else null.
+function pickOpponent(gameKey, want) {
+  const opps = opponentsOf(gameKey);
+  return opps.find((o) => o.key === want) || opps[0] || null;
+}
+function populateOppSelect(gameKey) {
+  const opps = opponentsOf(gameKey);
+  fillRunSelect(els.oppSelect, opps, state.oppKey);
+  els.oppRow.style.display = opps.length ? "" : "none";
+}
+// Swap only the foe's export (me's policy, model and env stay) and start a fresh match.
+async function loadOpponent(oppKey) {
+  const opp = opponentsOf(state.gameKey).find((o) => o.key === oppKey);
+  if (!opp || state.loading) { els.oppSelect.value = state.oppKey; syncRunTitle(els.oppSelect); return; }
+  state.loading = true;
+  setStatus(`Loading ${opp.label} opponent…`);
+  try {
+    state.foeExport = await fetchExport(opp.policy);
+    state.oppKey = opp.key;
+    state.stats = { win: 0, lose: 0, draw: 0, ep: 0 };
+    applyFoeExport();
+    cancelHold();
+    state.env.reset(true);
+    state.me.ctr = 0; state.foe.ctr = 0;
+    pushTrails(true);
+    els.hudResult.textContent = ""; els.hudResult.className = "result";
+    if (state.foePolicy) setStatus(`Opponent: ${opp.label}.`);
+  } catch (err) {
+    console.error(err);
+    els.oppSelect.value = state.oppKey;
+    syncRunTitle(els.oppSelect);
+    setStatus("Error loading opponent: " + err.message);
+  } finally {
+    state.loading = false;
+    state.last = performance.now();
+  }
+}
+
 // Swap only the policy export (model and env stay); both sides run it.
 async function loadRun(runKey) {
   const run = runsOf(state.gameKey).find((r) => r.key === runKey);
@@ -570,6 +616,11 @@ async function loadRun(runKey) {
 // This mode's own controls (Auto / Playable, Max seconds). The shared ones -- Play,
 // Reset, the dropdowns and the keyboard -- are wired by main.js.
 function wireControls() {
+  els.oppSelect.addEventListener("change", (e) => {
+    e.target.blur();
+    syncRunTitle(e.target);
+    loadOpponent(e.target.value);
+  });
   for (const el of [els.modeAuto, els.modePlayable]) {
     el.addEventListener("change", () => {
       state.playable = els.modePlayable.checked;
