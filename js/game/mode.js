@@ -552,10 +552,10 @@ function populateRunSelect(gameKey) {
   els.runRow.style.display = runs.length > 1 ? "" : "none";
 }
 function opponentsOf(gameKey) { return (GAMES[gameKey] && GAMES[gameKey].opponents) || []; }
-// The opponent for key `want` if the game has it, else its first (the default), else null.
+// The opponent for key `want` if the game has it, else its default, else its first, else null.
 function pickOpponent(gameKey, want) {
   const opps = opponentsOf(gameKey);
-  return opps.find((o) => o.key === want) || opps[0] || null;
+  return opps.find((o) => o.key === want) || opps.find((o) => o.default) || opps[0] || null;
 }
 function populateOppSelect(gameKey) {
   const opps = opponentsOf(gameKey);
@@ -567,7 +567,7 @@ async function loadOpponent(oppKey) {
   const opp = opponentsOf(state.gameKey).find((o) => o.key === oppKey);
   if (!opp || state.loading) { els.oppSelect.value = state.oppKey; syncRunTitle(els.oppSelect); return; }
   state.loading = true;
-  setStatus(`Loading ${opp.label} opponent…`);
+  setStatus(`Loading opponent ${opp.label}…`);
   try {
     state.foeExport = await fetchExport(opp.policy);
     state.oppKey = opp.key;
